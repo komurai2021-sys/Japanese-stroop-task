@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stroop Task — Dual Task Study</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;700&family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --border: #e2e0d8;
+    --text: #1a1916;
+    --muted: #8a8880;
+    --accent: #2d5be3;
+
+    --red:    #d63030;
+    --blue:   #1a6bbf;
+    --green:  #1a8a4a;
+    --yellow: #b87a00;
+
+    --correct: #1a8a4a;
+    --wrong:   #d63030;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .screen { display: none; flex-direction: column; align-items: center; width: 100%; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ─── EXPERIMENTER SETUP ─── */
+  #screen-setup {
+    background: var(--surface);
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  .setup-header {
+    background: var(--text);
+    color: #fff;
+    width: 100%;
+    padding: 1.2rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .setup-header h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    font-weight: 400;
+  }
+  .setup-header .badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    background: rgba(255,255,255,0.15);
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.1em;
+  }
+
+  .setup-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 2rem;
+    max-width: 900px;
+    width: 100%;
+    align-items: start;
+  }
+
+  .setup-section {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.4rem;
+  }
+  .setup-section.full { grid-column: span 2; }
+  .setup-section h2 {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-row { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.9rem; }
+  .form-row:last-child { margin-bottom: 0; }
+  label { font-size: 0.78rem; color: var(--muted); font-weight: 400; }
+  input, select {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.88rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+
+  .radio-group { display: flex; gap: 0.75rem; }
+  .radio-opt {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .radio-opt input[type=radio] { display: none; }
+  .radio-opt.selected {
+    border-color: var(--accent);
+    background: #eef2fd;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .key-map-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .key-map-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+  }
+  .color-swatch {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .key-map-item .k {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 7px;
+    margin-left: auto;
+  }
+
+  .trial-count-btns { display: flex; gap: 0.5rem; }
+  .tc-btn {
+    flex: 1;
+    padding: 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .tc-btn.selected {
+    border-color: var(--accent);
+    background: #eef2fd;
+    color: var(--accent);
+  }
+
+  .btn-launch {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 1rem 3rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.15s, transform 0.1s;
+    width: 100%;
+  }
+  .btn-launch:hover { background: #1a47c2; transform: translateY(-1px); }
+
+  /* ─── PARTICIPANT TASK ─── */
+  #screen-task {
+    background: #111;
+    justify-content: center;
+    gap: 0;
+    position: relative;
+  }
+
+  .task-meta {
+    position: absolute;
+    top: 1.5rem;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: #555;
+    letter-spacing: 0.1em;
+  }
+
+  #stimulus-word {
+    font-family: 'Noto Serif JP', serif;
+    font-size: min(14vw, 130px);
+    font-weight: 700;
+    user-select: none;
+    line-height: 1;
+  }
+
+  .key-strip {
+    position: absolute;
+    bottom: 2rem;
+    display: flex;
+    gap: 1.5rem;
+  }
+  .ks-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .ks-item .jp {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.1rem;
+  }
+  .ks-item .k {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: #555;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 2px 9px;
+    min-width: 28px;
+    text-align: center;
+    transition: color 0.1s, border-color 0.1s;
+  }
+  .ks-item.lit .k { color: #fff; border-color: #fff; }
+
+  .task-flash {
+    position: fixed;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.05s;
+  }
+  .task-flash.show { opacity: 1; }
+
+  @keyframes pop {
+    0%   { transform: scale(0.8); opacity:0; }
+    60%  { transform: scale(1.06); }
+    100% { transform: scale(1); opacity:1; }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%  { transform: translateX(-10px); }
+    50%  { transform: translateX(10px); }
+    75%  { transform: translateX(-6px); }
+  }
+  .anim-pop   { animation: pop 0.22s ease forwards; }
+  .anim-shake { animation: shake 0.28s ease; }
+
+  /* ─── RESULTS ─── */
+  #screen-results {
+    background: var(--surface);
+    padding: 0;
+    justify-content: flex-start;
+  }
+
+  .results-header {
+    background: var(--text);
+    color: #fff;
+    width: 100%;
+    padding: 1.2rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .results-header h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    font-weight: 400;
+  }
+  .pid-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    background: rgba(255,255,255,0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  .results-body {
+    padding: 2rem;
+    max-width: 900px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+  }
+  .sum-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .sum-card .s-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .sum-card .s-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.4rem;
+    color: var(--text);
+  }
+  .sum-card .s-unit { font-size: 0.65rem; color: var(--muted); }
+  .sum-card.highlight .s-val { color: var(--accent); }
+
+  .table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .table-wrap::-webkit-scrollbar { width: 4px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  thead th {
+    background: var(--bg);
+    padding: 0.6rem 0.9rem;
+    text-align: left;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 400;
+    position: sticky;
+    top: 0;
+  }
+  tbody td {
+    padding: 0.5rem 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  tbody tr:hover { background: var(--bg); }
+  .ok { color: var(--correct); font-weight: 600; }
+  .no { color: var(--wrong); font-weight: 600; }
+  .cong   { color: var(--muted); }
+  .incong { color: var(--accent); }
+
+  .results-actions { display: flex; gap: 0.75rem; }
+  .btn-export {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    padding: 0.75rem 1.5rem;
+    border-radius: 7px;
+    cursor: pointer;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    background: transparent;
+    text-transform: uppercase;
+    transition: background 0.15s;
+  }
+  .btn-export:hover { background: #eef2fd; }
+  .btn-new {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    padding: 0.75rem 1.5rem;
+    border-radius: 7px;
+    cursor: pointer;
+    border: none;
+    color: #fff;
+    background: var(--text);
+    text-transform: uppercase;
+    transition: background 0.15s;
+  }
+  .btn-new:hover { background: #333; }
+</style>
+</head>
+<body>
+
+<!-- ─── EXPERIMENTER SETUP ─── -->
+<div class="screen active" id="screen-setup">
+  <div class="setup-header">
+    <h1>STROOP TASK — EXPERIMENTER SETUP</h1>
+    <span class="badge">DUAL TASK STUDY · 2025</span>
+  </div>
+
+  <div class="setup-body">
+
+    <div class="setup-section">
+      <h2>Participant Info</h2>
+      <div class="form-row">
+        <label>Participant ID / Name</label>
+        <input type="text" id="pid" placeholder="e.g. P01 or Ko Murai">
+      </div>
+      <div class="form-row">
+        <label>Age</label>
+        <input type="number" id="age" placeholder="18" min="16" max="30">
+      </div>
+      <div class="form-row">
+        <label>Gender</label>
+        <select id="gender">
+          <option value="">— select —</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Non-binary</option>
+          <option>Prefer not to say</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Language Group</label>
+        <div class="radio-group">
+          <label class="radio-opt" id="opt-mono">
+            <input type="radio" name="lang" value="Monolingual"> Monolingual
+          </label>
+          <label class="radio-opt" id="opt-bi">
+            <input type="radio" name="lang" value="Bilingual"> Bilingual
+          </label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Languages spoken (bilingual only)</label>
+        <input type="text" id="languages" placeholder="e.g. English, Japanese">
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <h2>Task Settings</h2>
+      <div class="form-row">
+        <label>Number of Trials</label>
+        <div class="trial-count-btns" id="trial-btns">
+          <button class="tc-btn" data-n="10">10</button>
+          <button class="tc-btn selected" data-n="20">20</button>
+          <button class="tc-btn" data-n="30">30</button>
+          <button class="tc-btn" data-n="40">40</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Stimulus Duration (ms) — 0 = until keypress</label>
+        <select id="stim-dur">
+          <option value="0">Until keypress (self-paced)</option>
+          <option value="1500">1500 ms</option>
+          <option value="2000" selected>2000 ms (recommended)</option>
+          <option value="2500">2500 ms</option>
+          <option value="3000">3000 ms</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Inter-trial interval (ms)</label>
+        <select id="iti">
+          <option value="300">300 ms</option>
+          <option value="500" selected>500 ms</option>
+          <option value="800">800 ms</option>
+          <option value="1000">1000 ms</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <h2>Key Mapping (fixed)</h2>
+      <div class="key-map-grid">
+        <div class="key-map-item">
+          <div class="color-swatch" style="background:var(--red)"></div>
+          <span>あか Red</span>
+          <span class="k">D</span>
+        </div>
+        <div class="key-map-item">
+          <div class="color-swatch" style="background:var(--blue)"></div>
+          <span>あお Blue</span>
+          <span class="k">F</span>
+        </div>
+        <div class="key-map-item">
+          <div class="color-swatch" style="background:var(--yellow)"></div>
+          <span>きいろ Yellow</span>
+          <span class="k">J</span>
+        </div>
+        <div class="key-map-item">
+          <div class="color-swatch" style="background:var(--green)"></div>
+          <span>みどり Green</span>
+          <span class="k">K</span>
+        </div>
+      </div>
+      <p style="font-size:0.72rem; color:var(--muted); margin-top:0.8rem; line-height:1.6;">
+        Keys are home-row adjacent and match the study protocol.<br>
+        Press <strong>ESC</strong> during task to abort.
+      </p>
+    </div>
+
+    <div class="setup-section">
+      <h2>Reminder — Dual Task Protocol</h2>
+      <p style="font-size:0.78rem; color:var(--muted); line-height:1.7;">
+        1. Play the <strong>word recall audio</strong> on a separate device before starting.<br>
+        2. Click <em>Launch Task</em> — hand the keyboard to the participant.<br>
+        3. The Stroop stimuli will begin immediately.<br>
+        4. Participant presses the key matching the <strong>ink color</strong> (ignore word meaning).<br>
+        5. After all trials, results are shown and can be exported as CSV.
+      </p>
+    </div>
+
+    <div class="setup-section full" style="background:#eef2fd; border-color:#c5d0f7;">
+      <button class="btn-launch" id="btn-launch">▶ Launch Task for Participant</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── PARTICIPANT TASK ─── -->
+<div class="screen" id="screen-task">
+  <div class="task-flash" id="task-flash"></div>
+  <div class="task-meta">
+    <span id="tm-trial">1 / 20</span>
+    <span id="tm-acc"></span>
+  </div>
+  <!-- countdown timer bar -->
+  <div id="timer-bar-wrap" style="position:absolute;top:0;left:0;right:0;height:5px;background:#222;">
+    <div id="timer-bar" style="height:100%;width:100%;background:#555;transition:width linear;transform-origin:left;"></div>
+  </div>
+  <div id="stimulus-word">あか</div>
+  <div class="key-strip">
+    <div class="ks-item" id="ks-d">
+      <div class="jp" style="color:var(--red)">あか</div>
+      <div class="k">D</div>
+    </div>
+    <div class="ks-item" id="ks-f">
+      <div class="jp" style="color:var(--blue)">あお</div>
+      <div class="k">F</div>
+    </div>
+    <div class="ks-item" id="ks-j">
+      <div class="jp" style="color:var(--yellow)">きいろ</div>
+      <div class="k">J</div>
+    </div>
+    <div class="ks-item" id="ks-k">
+      <div class="jp" style="color:var(--green)">みどり</div>
+      <div class="k">K</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── RESULTS ─── -->
+<div class="screen" id="screen-results">
+  <div class="results-header">
+    <h1>RESULTS</h1>
+    <span class="pid-badge" id="res-pid-badge">Participant —</span>
+  </div>
+  <div class="results-body">
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="s-label">Participant</div>
+        <div class="s-val" id="r-pid" style="font-size:0.95rem; padding-top:4px">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">Group</div>
+        <div class="s-val" id="r-group" style="font-size:0.95rem; padding-top:4px">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">Accuracy</div>
+        <div class="s-val" id="r-acc">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">Mean RT</div>
+        <div class="s-val"><span id="r-rt">—</span><span class="s-unit"> ms</span></div>
+      </div>
+      <div class="sum-card highlight">
+        <div class="s-label">Stroop Effect</div>
+        <div class="s-val"><span id="r-stroop">—</span><span class="s-unit"> ms</span></div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">Congruent RT</div>
+        <div class="s-val"><span id="r-cong">—</span><span class="s-unit"> ms</span></div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">Incongruent RT</div>
+        <div class="s-val"><span id="r-incong">—</span><span class="s-unit"> ms</span></div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">Correct Trials</div>
+        <div class="s-val" id="r-correct">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">Total Trials</div>
+        <div class="s-val" id="r-total">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">Date/Time</div>
+        <div class="s-val" id="r-time" style="font-size:0.72rem; padding-top:6px">—</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Word</th>
+            <th>Ink Color</th>
+            <th>Type</th>
+            <th>Key Pressed</th>
+            <th>RT (ms)</th>
+            <th>Correct?</th>
+          </tr>
+        </thead>
+        <tbody id="r-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="results-actions">
+      <button class="btn-export" id="btn-csv">⬇ Export CSV</button>
+      <button class="btn-new" id="btn-new">Next Participant →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  { jp:'あか', en:'Red',    key:'d', css:'var(--red)'    },
+  { jp:'あお', en:'Blue',   key:'f', css:'var(--blue)'   },
+  { jp:'きいろ', en:'Yellow', key:'j', css:'var(--yellow)' },
+  { jp:'みどり', en:'Green',  key:'k', css:'var(--green)'  },
+];
+const KEY_IDS = { d:'ks-d', f:'ks-f', j:'ks-j', k:'ks-k' };
+
+let cfg = {};
+let trials = [], currentTrial = 0, awaiting = false, trialStart = 0, correctCount = 0;
+let stimTimer = null, allResults = [];
+
+// ── Setup interactions ──
+document.querySelectorAll('.radio-opt').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.radio-opt').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  });
+});
+document.querySelectorAll('.tc-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tc-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+
+document.getElementById('btn-launch').addEventListener('click', () => {
+  const pid  = document.getElementById('pid').value.trim() || 'Unknown';
+  const age  = document.getElementById('age').value || '—';
+  const gender = document.getElementById('gender').value || '—';
+  const lang = document.querySelector('input[name=lang]:checked');
+  const langs = document.getElementById('languages').value.trim() || '—';
+  const nTrials = parseInt(document.querySelector('.tc-btn.selected').dataset.n);
+  const stimDur = parseInt(document.getElementById('stim-dur').value);
+  const iti     = parseInt(document.getElementById('iti').value);
+
+  if (!lang) { alert('Please select a language group.'); return; }
+
+  cfg = { pid, age, gender, langGroup: lang.value, languages: langs, nTrials, stimDur, iti };
+  startTask();
+});
+
+// ── Task ──
+function shuffle(a) {
+  const r = [...a];
+  for (let i=r.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [r[i],r[j]]=[r[j],r[i]]; }
+  return r;
+}
+
+function generateTrials(n) {
+  const t = [];
+  for (let i=0;i<n;i++) {
+    const word = COLORS[Math.floor(Math.random()*COLORS.length)];
+    let ink;
+    // ~60% incongruent guaranteed
+    if (i < Math.round(n*0.6)) {
+      do { ink = COLORS[Math.floor(Math.random()*COLORS.length)]; } while (ink===word);
+    } else {
+      ink = COLORS[Math.floor(Math.random()*COLORS.length)];
+    }
+    t.push({ word, ink, congruent: word===ink });
+  }
+  return shuffle(t);
+}
+
+function startTask() {
+  trials = generateTrials(cfg.nTrials);
+  currentTrial = 0; correctCount = 0; awaiting = false;
+  document.getElementById('tm-acc').textContent = '';
+  show('screen-task');
+  setTimeout(showTrial, 600);
+}
+
+function showTrial() {
+  const t = trials[currentTrial];
+  const el = document.getElementById('stimulus-word');
+  el.style.color = t.ink.css;
+  el.textContent = t.word.jp;
+  el.classList.remove('anim-pop','anim-shake');
+  void el.offsetWidth;
+  el.classList.add('anim-pop');
+
+  document.getElementById('tm-trial').textContent = `${currentTrial+1} / ${cfg.nTrials}`;
+  if (currentTrial > 0) {
+    const pct = Math.round((correctCount/currentTrial)*100);
+    document.getElementById('tm-acc').textContent = `${pct}% correct`;
+  }
+
+  awaiting = true;
+  trialStart = performance.now();
+
+  // Timer bar
+  const bar = document.getElementById('timer-bar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  bar.style.background = '#555';
+  void bar.offsetWidth; // reflow
+
+  if (cfg.stimDur > 0) {
+    bar.style.transition = `width ${cfg.stimDur}ms linear`;
+    bar.style.width = '0%';
+    // colour shift: green → yellow → red over duration
+    setTimeout(() => { if (awaiting) bar.style.background = '#b87a00'; }, cfg.stimDur * 0.5);
+    setTimeout(() => { if (awaiting) bar.style.background = '#d63030'; }, cfg.stimDur * 0.75);
+
+    stimTimer = setTimeout(() => {
+      if (awaiting) recordResponse(null, performance.now()-trialStart);
+    }, cfg.stimDur);
+  }
+}
+
+function recordResponse(key, rt) {
+  if (stimTimer) { clearTimeout(stimTimer); stimTimer = null; }
+  awaiting = false;
+  const t = trials[currentTrial];
+  const correct = key !== null && key === t.ink.key;
+  t.rt = Math.round(rt);
+  t.response = key || 'miss';
+  t.correct = correct;
+
+  if (correct) correctCount++;
+  if (key) flashKey(key);
+  doFlash(correct ? 'rgba(26,138,74,0.18)' : 'rgba(214,48,48,0.18)');
+  if (!correct) {
+    const el = document.getElementById('stimulus-word');
+    el.classList.remove('anim-shake'); void el.offsetWidth; el.classList.add('anim-shake');
+  }
+
+  currentTrial++;
+  if (currentTrial >= cfg.nTrials) {
+    setTimeout(showResults, 400);
+  } else {
+    setTimeout(showTrial, cfg.iti);
+  }
+}
+
+function flashKey(key) {
+  const id = KEY_IDS[key]; if (!id) return;
+  const el = document.getElementById(id);
+  el.classList.add('lit');
+  setTimeout(() => el.classList.remove('lit'), 200);
+}
+function doFlash(color) {
+  const fl = document.getElementById('task-flash');
+  fl.style.background = color;
+  fl.classList.add('show');
+  setTimeout(() => fl.classList.remove('show'), 120);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('screen-task').classList.contains('active')) {
+    if (confirm('Abort current trial session?')) show('screen-setup');
+    return;
+  }
+  if (!awaiting) return;
+  const key = e.key.toLowerCase();
+  if (!['d','f','j','k'].includes(key)) return;
+  e.preventDefault();
+  recordResponse(key, performance.now()-trialStart);
+});
+
+// ── Results ──
+function showResults() {
+  const pid = cfg.pid;
+  document.getElementById('res-pid-badge').textContent = pid;
+  document.getElementById('r-pid').textContent = pid;
+  document.getElementById('r-group').textContent = cfg.langGroup;
+  document.getElementById('r-time').textContent = new Date().toLocaleString();
+
+  const responded = trials.filter(t=>t.response);
+  const correct = trials.filter(t=>t.correct);
+  const acc = responded.length ? `${Math.round((correct.length/responded.length)*100)}%` : '—';
+  const allRts = correct.map(t=>t.rt);
+  const meanRt = allRts.length ? Math.round(allRts.reduce((a,b)=>a+b,0)/allRts.length) : null;
+  const congRts = correct.filter(t=>t.congruent).map(t=>t.rt);
+  const incRts  = correct.filter(t=>!t.congruent).map(t=>t.rt);
+  const congMean = congRts.length ? Math.round(congRts.reduce((a,b)=>a+b,0)/congRts.length) : null;
+  const incMean  = incRts.length  ? Math.round(incRts.reduce((a,b)=>a+b,0)/incRts.length)  : null;
+  const stroop = (congMean!==null&&incMean!==null) ? incMean-congMean : null;
+
+  document.getElementById('r-acc').textContent    = acc;
+  document.getElementById('r-rt').textContent     = meanRt ?? '—';
+  document.getElementById('r-cong').textContent   = congMean ?? '—';
+  document.getElementById('r-incong').textContent = incMean ?? '—';
+  document.getElementById('r-stroop').textContent = stroop!==null?(stroop>=0?'+':'')+stroop:'—';
+  document.getElementById('r-correct').textContent = correct.length;
+  document.getElementById('r-total').textContent   = cfg.nTrials;
+
+  const tbody = document.getElementById('r-tbody');
+  tbody.innerHTML = '';
+  trials.forEach((t,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td style="font-family:'Noto Serif JP',serif;font-size:0.95rem;color:${t.ink.css}">${t.word.jp}</td>
+      <td>${t.ink.en}</td>
+      <td class="${t.congruent?'cong':'incong'}">${t.congruent?'Congruent':'Incongruent'}</td>
+      <td style="font-family:'Space Mono',monospace">${t.response||'miss'}</td>
+      <td style="font-family:'Space Mono',monospace">${t.rt??'—'}</td>
+      <td class="${t.correct?'ok':'no'}">${t.correct?'✓':'✗'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // store for CSV
+  allResults.push({ cfg, trials: trials.map(t=>({...t})), summary: {acc, meanRt, congMean, incMean, stroop} });
+
+  show('screen-results');
+}
+
+document.getElementById('btn-csv').addEventListener('click', () => {
+  const last = allResults[allResults.length-1];
+  if (!last) return;
+  const { cfg: c, trials: ts } = last;
+  const header = 'ParticipantID,Age,Gender,LanguageGroup,Languages,Trial,WordJP,WordEN,InkColor,Type,KeyPressed,RT_ms,Correct\n';
+  const rows = ts.map((t,i)=>[
+    `"${c.pid}"`, c.age, `"${c.gender}"`, c.langGroup, `"${c.languages}"`,
+    i+1, t.word.jp, t.word.en, t.ink.en,
+    t.congruent?'Congruent':'Incongruent',
+    t.response||'miss', t.rt??'', t.correct?1:0
+  ].join(',')).join('\n');
+  const blob = new Blob([header+rows], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `stroop_${c.pid.replace(/\s+/g,'_')}_${Date.now()}.csv`;
+  a.click();
+});
+
+document.getElementById('btn-new').addEventListener('click', () => {
+  document.getElementById('pid').value='';
+  document.getElementById('age').value='';
+  document.getElementById('gender').value='';
+  document.querySelectorAll('.radio-opt').forEach(r=>r.classList.remove('selected'));
+  document.getElementById('languages').value='';
+  show('screen-setup');
+});
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
